@@ -82,6 +82,10 @@
                 filter: {
                     type: Array,
                     default: []
+                },
+                validate: {
+                    type: Boolean,
+                    default: false
                 }
             },
             ready: function() {
@@ -99,10 +103,7 @@
                     return;
                 }
 
-                if (!this.headers) {
-                    this.headers = data[0];
-                }
-                this.sampleData = data.slice(1);
+                this.sampleData = data;
             },
             getRawSampleData: function() {
                 return this.$.dataStorage.textContent;
@@ -131,9 +132,10 @@
                 });
             },
             validateHeaders: function(results, parser) {
-                if (!this.headers) {
+                if (!this.validate || !this.headers) {
                     return;
                 }
+
                 var fileHeaders = results.data[0];
                 for (var index in this.headers) {
                     if (!fileHeaders[index]) {
@@ -154,5 +156,4 @@
         })
     </script>
     <script type="text/javascript" src="bower_components/papaparse/papaparse.js"></script>
-</dom-module>
-
+    </dom-module>
