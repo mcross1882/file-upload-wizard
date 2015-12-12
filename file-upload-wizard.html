@@ -1,0 +1,166 @@
+<link rel="import" href="bower_components/polymer/polymer.html">
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-toast/paper-toast.html">
+
+<dom-module id="file-upload-wizard">
+    <style>
+        :host {
+            font-family: arial !important;
+        }
+
+        .select-area {
+            margin-bottom: 1em;
+        }
+
+        table {
+            width: 100%;
+        }
+
+        table thead {
+            background-color: rgba(0,0,0,0.1);
+        }
+        
+        table thead th {
+            text-align: left;
+            padding: 0.5em;
+        }
+
+        table tbody tr:nth-child(even) {
+            background-color: rgba(0,0,0,0.1);
+        }
+
+        table tbody tr td {
+            padding: 0.5em;
+        }
+
+        .hide {
+            display: none;
+        }
+
+        #submitFile {
+            float: right;
+        }
+    </style>
+    
+    <template>
+        <div class="select-area">
+            <p>Select a file to upload <i>{{currentFile.name}}</i></p>
+            <input type="file" id="fileSelector" accept="{{filter}}" style="display:none;" />
+            <paper-button id="selectFile" raised>Select File</paper-button>
+            <paper-button id="submitFile" raised>Submit</paper-button>
+        </div>
+
+        <table cellspacing="0" cellpadding="0">
+            <thead>
+                <tr>
+                    <template is="dom-repeat" items="{{headers}}" as="header">
+                        <th>{{header}}</th>
+                    </template>
+                </tr>
+            </thead>
+            <tbody>
+                <template is="dom-repeat" items="{{sampleData}}" as="row">
+                    <tr>
+                        <template is="dom-repeat" items="{{row}}" as="column">
+                            <td>{{column}}</td>
+                        </template>
+                    </tr>
+                </template>
+            </tbody>
+        </table>
+        
+        <div id="dataStorage" class="hide">
+            <content></content>
+        </div>
+
+        <paper-toast id="errorContainer" text="{{errorMessage}}"></paper-toast>
+    </template>
+
+    <script>
+        Polymer({
+            is: 'file-upload-wizard',
+            properties: {
+                headers: {
+                    type: Array,
+                    default: []
+                },
+                filter: {
+                    type: Array,
+                    default: []
+                }
+            },
+            ready: function() {
+                this.updateData();
+                this.registerEvents();
+            },
+            updateData: function() {
+                var rawData = this.getRawSampleData();
+                if (!rawData) {
+                    return;
+                }
+
+                var data = JSON.parse(rawData.trim());
+                if (!data || !data.length) {
+                    return;
+                }
+
+                if (!this.headers) {
+                    this.headers = data[0];
+                }
+                this.sampleData = data.slice(1);
+            },
+            getRawSampleData: function() {
+                return this.$.dataStorage.textContent;
+            },
+            registerEvents: function() {
+                var that = this;
+                this.$.fileSelector.onchange = function() {
+                    that.readFile(this);
+                }
+                this.$.selectFile.onclick = function() {
+                    that.$.fileSelector.click();
+                }
+                this.$.submitFile.onclick = function() {
+                    that.fire('submit');
+                }
+            },
+            readFile: function(input) {
+                if (!input.files || !input.files.length) {
+                    return;
+                }
+
+                var that = this;
+                this.currentFile = input.files[0];
+                Papa.parse(this.currentFile, {
+                    step: function(results, parser) {
+                        that.validateHeaders(results, parser);
+                        parser.abort();
+                    }
+                });
+            },
+            validateHeaders: function(results, parser) {
+                if (!this.headers) {
+                    return;
+                }
+                var fileHeaders = results.data[0];
+                for (var index in this.headers) {
+                    if (!fileHeaders[index]) {
+                        this.displayError("Missing header " + fileHeaders[index] + " in uploaded file.");
+                        return;
+                    }
+
+                    if (this.headers[index] != fileHeaders[index]) {
+                        this.displayError("Headers in upload file do not match. Please correct before uploading");
+                        return;
+                    }
+                }
+            },
+            displayError: function(message) {
+                this.errorMessage = message;
+                this.$.errorContainer.show();
+            }
+        })
+    </script>
+    <script type="text/javascript" src="bower_components/papaparse/papaparse.js"></script>
+</dom-module>
+
