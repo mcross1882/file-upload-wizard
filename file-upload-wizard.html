@@ -36,18 +36,13 @@
         .hide {
             display: none;
         }
-
-        #submitFile {
-            float: right;
-        }
     </style>
     
     <template>
         <div class="select-area">
-            <p>Select a file to upload <i>{{currentFile.name}}</i></p>
-            <input type="file" id="fileSelector" accept="{{filter}}" style="display:none;" />
             <paper-button id="selectFile" raised>Select File</paper-button>
-            <paper-button id="submitFile" raised>Submit</paper-button>
+            Select a file to upload <i>{{currentFile.name}}</i>
+            <input type="file" id="fileSelector" accept="{{filter}}" style="display:none;" />
         </div>
 
         <table cellspacing="0" cellpadding="0">
@@ -120,9 +115,6 @@
                 this.$.selectFile.onclick = function() {
                     that.$.fileSelector.click();
                 }
-                this.$.submitFile.onclick = function() {
-                    that.fire('submit');
-                }
             },
             readFile: function(input) {
                 if (!input.files || !input.files.length) {
@@ -154,8 +146,10 @@
                         return;
                     }
                 }
+                this.$.statusIcon.icon = 'circle-check';
             },
             displayError: function(message) {
+                this.$.statusIcon.icon = 'cancel';
                 this.errorMessage = message;
                 this.$.errorContainer.show();
             }
